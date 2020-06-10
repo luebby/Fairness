@@ -6,12 +6,20 @@
 
 
 # Setup
-library(mosaic)
-library(dagitty)
 set.seed(1896)
 n <- 1000
 
+# DAG
+library(ggdag)
+co <- data.frame(x=c(0,1,1,2), y=c(0,0,1,0), name=c("A", "X", "U","Y")) 
+
+Fairness <- dagify(X ~ A + U,
+                   Y ~ X,  coords = co) 
+ggdag(Fairness)  +
+  theme_dag()
+
 # Structual Causal Model
+library(mosaic)
 
 # Protected Attribute
 A <- rbinom(n, 1, 0.5)
