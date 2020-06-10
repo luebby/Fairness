@@ -8,9 +8,11 @@
 # Setup
 set.seed(1896)
 n <- 10000
+library(ggdag)
+library(mosaic)
+
 
 # DAG
-library(ggdag)
 co <- data.frame(x=c(0,1,1,2), y=c(0,0,1,0), name=c("A", "X", "U","Y")) 
 
 Fairness <- dagify(X ~ A + U,
@@ -18,8 +20,8 @@ Fairness <- dagify(X ~ A + U,
 ggdag(Fairness)  +
   theme_dag()
 
+
 # Structual Causal Model
-library(mosaic)
 
 # Protected Attribute
 A <- rbinom(n, 1, 0.5)
@@ -72,16 +74,21 @@ gf_density( ~ fitted.full, fill = ~ A, data = FairnessData) %>%
           subtitle ="mit A und X",
           x = "Vorhergesagte Werte",
           y = "Dichte")
+# Unfair
+
 gf_density( ~ fitted.excluded, fill = ~ A, data = FairnessData) %>%
   gf_labs(title = "Unwissendes Modell",
           subtitle ="ohne A, aber mit X",
           x = "Vorhergesagte Werte",
           y = "Dichte")
+# Still unfair
+
 gf_density( ~ fitted.fair, fill = ~ factor(A), data = FairnessData)%>%
   gf_labs(title = "Faires Modell",
           subtitle ="ohne A, mit Residuen von X",
           x = "Vorhergesagte Werte",
           y = "Dichte")
+# Fair!
 
 # Model Performance
 rsquared(model.full) 
