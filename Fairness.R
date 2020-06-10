@@ -7,7 +7,7 @@
 
 # Setup
 set.seed(1896)
-n <- 1000
+n <- 10000
 
 # DAG
 library(ggdag)
@@ -26,37 +26,40 @@ A <- rbinom(n, 1, 0.5)
 
 # Predictor U (Can not be observed)
 U <- rnorm(n)
+# Note: No child of protected attribute A
 
-# Predictor X: Child of Protected Attribute A and unobserved U
+# Predictor X: Child of protected attribute A and unobserved U
 X <- A + U + rnorm(n, sd = 0.1)
+# Note: Biased due to A 
 
 # Response: Child of X & U
 Y <- X + U + rnorm(n, sd = 0.1)
+# Note: Biased due to biased X
 
 # Data set
-Daten <- data.frame(Y, A, U, X)
+FairnessData <- data.frame(Y, A, U, X)
 
 
 
 # Model with all vars - including protected
-model.full <- lm(Y ~ A + X, data = Daten)
+model.full <- lm(Y ~ A + X, data = FairnessData)
 
 # Model with all vars excluding protected
-model.excluded <- lm(Y ~ X, data = Daten)
+model.excluded <- lm(Y ~ X, data = FairnessData)
 
 # Model without any descendants of protected
-model.strictfair <- lm(Y ~ 1, data = Daten)
+model.strictfair <- lm(Y ~ 1, data = FairnessData)
 
 # Model "Level 3" (https://arxiv.org/pdf/1703.06856.pdf)
 # Residuals independent of predictor (!)
-model.residual <- lm(X ~ A, data = Daten)
-Daten <- Daten %>%
+model.residual <- lm(X ~ A, data = FairnessData)
+FairnessData <- FairnessData %>%
   mutate(X.R = residuals(model.residual))
 # X.R: Residuals of X after Regression on A
-model.fair <- lm(Y ~ X.R, data = Daten)
+model.fair <- lm(Y ~ X.R, data = FairnessData)
 
 # Comparison
-Daten <- Daten %>%
+FairnessData <- FairnessData %>%
   mutate(fitted.full = fitted(model.full)) %>%
   mutate(fitted.excluded = fitted(model.excluded)) %>%
   mutate(fitted.strictfair = fitted(model.strictfair)) %>%
@@ -64,17 +67,17 @@ Daten <- Daten %>%
   mutate(A = as.factor(A))
 
 # Fairness Comparison
-gf_density( ~ fitted.full, fill = ~ A, data = Daten) %>%
+gf_density( ~ fitted.full, fill = ~ A, data = FairnessData) %>%
   gf_labs(title = "Volles Modell",
           subtitle ="mit A und X",
           x = "Vorhergesagte Werte",
           y = "Dichte")
-gf_density( ~ fitted.excluded, fill = ~ A, data = Daten) %>%
+gf_density( ~ fitted.excluded, fill = ~ A, data = FairnessData) %>%
   gf_labs(title = "Unwissendes Modell",
           subtitle ="ohne A, aber mit X",
           x = "Vorhergesagte Werte",
           y = "Dichte")
-gf_density( ~ fitted.fair, fill = ~ factor(A), data = Daten)%>%
+gf_density( ~ fitted.fair, fill = ~ factor(A), data = FairnessData)%>%
   gf_labs(title = "Faires Modell",
           subtitle ="ohne A, mit Residuen von X",
           x = "Vorhergesagte Werte",
