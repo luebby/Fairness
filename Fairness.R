@@ -24,6 +24,8 @@ ggdag(Fairness)  +
 # Structual Causal Model
 
 # Protected Attribute
+# i.e. an attribute for which we do not want to discriminate
+# i.e. the model should be fair with respect to this
 A <- rbinom(n, 1, 0.5)
 
 # Predictor U (Can not be observed)
@@ -36,11 +38,10 @@ X <- A + U + rnorm(n, sd = 0.1)
 
 # Response: Child of X & U
 Y <- X + U + rnorm(n, sd = 0.1)
-# Note: Biased due to biased X
+
 
 # Data set
 FairnessData <- data.frame(Y, A, U, X)
-
 
 
 # Model with all vars - including protected
@@ -53,13 +54,13 @@ model.excluded <- lm(Y ~ X, data = FairnessData)
 model.strictfair <- lm(Y ~ 1, data = FairnessData)
 
 # Model "Level 3" (https://arxiv.org/pdf/1703.06856.pdf)
-# Residuals independent of predictor (!)
+# Residuals independent of predictor
 model.residual <- lm(X ~ A, data = FairnessData)
 FairnessData <- FairnessData %>%
   mutate(X.R = residuals(model.residual))
-
 # X.R: Residuals of X after Regression on A
 model.fair <- lm(Y ~ X.R, data = FairnessData)
+
 
 # Comparison
 FairnessData <- FairnessData %>%
@@ -75,14 +76,14 @@ gf_density( ~ fitted.full, fill = ~ A, data = FairnessData) %>%
           subtitle ="mit A und X",
           x = "Vorhergesagte Werte",
           y = "Dichte")
-# Unfair
+# Unfair!
 
 gf_density( ~ fitted.excluded, fill = ~ A, data = FairnessData) %>%
   gf_labs(title = "Unwissendes Modell",
           subtitle ="ohne A, aber mit X",
           x = "Vorhergesagte Werte",
           y = "Dichte")
-# Still unfair
+# Still unfair.
 
 gf_density( ~ fitted.fair, fill = ~ factor(A), data = FairnessData)%>%
   gf_labs(title = "Faires Modell",
@@ -91,7 +92,7 @@ gf_density( ~ fitted.fair, fill = ~ factor(A), data = FairnessData)%>%
           y = "Dichte")
 # Fair!
 
-# Model Performance
+# Comparison of model performance
 rsquared(model.full) 
 rsquared(model.excluded)
 rsquared(model.strictfair)
@@ -99,15 +100,17 @@ rsquared(model.fair)
 
 
 # Counterfactual Fairness
+# I.e. the predctions of Y should be
+# fair with respect to A
 
-# Some "test"-persons (incl. counterfactual)
+# Some test data (incl. counterfactual A)
 A0 <- c(rep(c(0,1), 5))
 U0 <- rep(rnorm(5), each = 2)
 U0.X <- rep(rnorm(5, sd = 0.1), each = 2)
 X0 <- A0 + U0 + U0.X
 TestFair <- data.frame(ID = rep(1:5, each = 2), A = A0, X = X0)
 
-# Estimate Residuals
+# Estimate residuals for test data
 model.residual0 <- lm(X ~ A, data = TestFair)
 TestFair <- TestFair %>%
   mutate(X.R = residuals(model.residual0))
