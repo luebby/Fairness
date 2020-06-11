@@ -10,6 +10,7 @@ set.seed(1896)
 n <- 10000
 library(ggdag)
 library(mosaic)
+library(tidyr)
 
 
 # DAG
