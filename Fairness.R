@@ -57,6 +57,7 @@ model.strictfair <- lm(Y ~ 1, data = FairnessData)
 model.residual <- lm(X ~ A, data = FairnessData)
 FairnessData <- FairnessData %>%
   mutate(X.R = residuals(model.residual))
+
 # X.R: Residuals of X after Regression on A
 model.fair <- lm(Y ~ X.R, data = FairnessData)
 
@@ -96,3 +97,25 @@ rsquared(model.excluded)
 rsquared(model.strictfair)
 rsquared(model.fair)
 
+
+# Counterfactual Fairness
+
+# Some "test"-persons (incl. counterfactual)
+A0 <- c(rep(c(0,1), 5))
+U0 <- rep(rnorm(5), each = 2)
+U0.X <- rep(rnorm(5, sd = 0.1), each = 2)
+X0 <- A0 + U0 + U0.X
+TestFair <- data.frame(ID = rep(1:5, each = 2), A = A0, X = X0)
+
+# Estimate Residuals
+model.residual0 <- lm(X ~ A, data = TestFair)
+TestFair <- TestFair %>%
+  mutate(X.R = residuals(model.residual0))
+
+# Apply model
+TestFair <- TestFair %>%
+  mutate(Y.Pred = predict(model.fair, newdata = TestFair))
+
+# Compare
+TestFair %>%
+  pivot_wider(id_cols = ID, names_from = A, values_from = Y.Pred, names_prefix = "Score_")
