@@ -9,18 +9,20 @@
 set.seed(1896)
 n <- 10000
 library(ggdag)
-library(mosaic)
-library(tidyr)
+
+
 
 
 # DAG
 co <- data.frame(x=c(0,1,1,2), y=c(0,0,1,0), name=c("A", "X", "U","Y")) 
 
 Fairness <- dagify(X ~ A + U,
-                   Y ~ X + U,  coords = co) 
+                   Y ~ X ,  coords = co) 
 ggdag(Fairness)  +
   theme_dag()
 
+library(mosaic)
+library(tidyr)
 
 # Structual Causal Model
 
@@ -37,8 +39,8 @@ U <- rnorm(n)
 X <- A + U + rnorm(n, sd = 0.1)
 # Note: Biased due to A 
 
-# Response: Child of X & U
-Y <- X + U + rnorm(n, sd = 0.1)
+# Response: Child of X
+Y <- X + rnorm(n, sd = 0.1)
 
 
 # Data set
@@ -121,5 +123,7 @@ TestFair <- TestFair %>%
   mutate(Y.Pred = predict(model.fair, newdata = TestFair))
 
 # Compare
+library(tidyr)
 TestFair %>%
   pivot_wider(id_cols = ID, names_from = A, values_from = Y.Pred, names_prefix = "Score_")
+
