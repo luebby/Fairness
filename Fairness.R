@@ -88,7 +88,7 @@ gf_density( ~ fitted.excluded, fill = ~ A, data = FairnessData) %>%
           y = "Dichte")
 # Still unfair.
 
-gf_density( ~ fitted.fair, fill = ~ factor(A), data = FairnessData)%>%
+gf_density( ~ fitted.fair, fill = ~ A, data = FairnessData)%>%
   gf_labs(title = "Faires Modell",
           subtitle ="ohne A, mit Residuen von X",
           x = "Vorhergesagte Werte",
