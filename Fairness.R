@@ -17,7 +17,7 @@ library(tidyr)
 co <- data.frame(x=c(0,1,1,2), y=c(0,0,1,0), name=c("A", "X", "U","Y")) 
 
 Fairness <- dagify(X ~ A + U,
-                   Y ~ X,  coords = co) 
+                   Y ~ X + U,  coords = co) 
 ggdag(Fairness)  +
   theme_dag()
 
