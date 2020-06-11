@@ -3,17 +3,13 @@
 # https://www.nature.com/articles/d41586-020-00274-3
 # https://arxiv.org/pdf/1703.06856.pdf
 
-
-
 # Setup
 set.seed(1896)
 n <- 10000
-library(ggdag)
-
-
 
 
 # DAG
+library(ggdag)
 co <- data.frame(x=c(0,1,1,2), y=c(0,0,1,0), name=c("A", "X", "U","Y")) 
 
 Fairness <- dagify(X ~ A + U,
@@ -21,10 +17,11 @@ Fairness <- dagify(X ~ A + U,
 ggdag(Fairness)  +
   theme_dag()
 
-library(mosaic)
-library(tidyr)
+
 
 # Structual Causal Model
+library(mosaic)
+library(tidyr)
 
 # Protected Attribute
 # i.e. an attribute for which we do not want to discriminate
@@ -57,7 +54,7 @@ model.excluded <- lm(Y ~ X, data = FairnessData)
 model.strictfair <- lm(Y ~ 1, data = FairnessData)
 
 # Model "Level 3" (https://arxiv.org/pdf/1703.06856.pdf)
-# Residuals independent of predictor
+# Residuals independent of predictor (here: protected attribute)
 model.residual <- lm(X ~ A, data = FairnessData)
 FairnessData <- FairnessData %>%
   mutate(X.R = residuals(model.residual))
@@ -65,7 +62,7 @@ FairnessData <- FairnessData %>%
 model.fair <- lm(Y ~ X.R, data = FairnessData)
 
 
-# Comparison
+# Comparison of prediction
 FairnessData <- FairnessData %>%
   mutate(fitted.full = fitted(model.full)) %>%
   mutate(fitted.excluded = fitted(model.excluded)) %>%
@@ -74,6 +71,8 @@ FairnessData <- FairnessData %>%
   mutate(A = as.factor(A))
 
 # Fairness Comparison
+
+# Fuil model
 gf_density( ~ fitted.full, fill = ~ A, data = FairnessData) %>%
   gf_labs(title = "Volles Modell",
           subtitle ="mit A und X",
@@ -81,6 +80,7 @@ gf_density( ~ fitted.full, fill = ~ A, data = FairnessData) %>%
           y = "Dichte")
 # Unfair!
 
+# Unaware model, i.e. without A (only X)
 gf_density( ~ fitted.excluded, fill = ~ A, data = FairnessData) %>%
   gf_labs(title = "Unwissendes Modell",
           subtitle ="ohne A, aber mit X",
@@ -88,6 +88,7 @@ gf_density( ~ fitted.excluded, fill = ~ A, data = FairnessData) %>%
           y = "Dichte")
 # Still unfair.
 
+# Model with residuals of X as predictors
 gf_density( ~ fitted.fair, fill = ~ A, data = FairnessData)%>%
   gf_labs(title = "Faires Modell",
           subtitle ="ohne A, mit Residuen von X",
@@ -100,7 +101,8 @@ rsquared(model.full)
 rsquared(model.excluded)
 rsquared(model.strictfair)
 rsquared(model.fair)
-
+# Note model.full and model.excluded perform similar due to causal structure:
+# X as mediator between A and Y
 
 # Counterfactual Fairness
 # I.e. the predctions of Y should be
@@ -123,7 +125,6 @@ TestFair <- TestFair %>%
   mutate(Y.Pred = predict(model.fair, newdata = TestFair))
 
 # Compare
-library(tidyr)
 TestFair %>%
   pivot_wider(id_cols = ID, names_from = A, values_from = Y.Pred, names_prefix = "Score_")
 
