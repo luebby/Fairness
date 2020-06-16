@@ -1,7 +1,19 @@
-# Setup
-library(mosaic)
+# Data
 data("GermanCredit", package = "klaR")
 
+# DAG
+library(ggdag)
+co <- data.frame(x=c(0,0,1), y=c(1,0,0), name=c("A", "X", "Y")) 
+
+Credit <- dagify(X ~ A,
+                 Y ~ A + X ,  coords = co) 
+ggdag(Credit)  +
+  theme_dag()
+
+
+
+library(mosaic)
+library(forcats)
 # Data preprocessing
 GermanCredit <- GermanCredit %>%
   mutate(sex = factor(substr(personal_status_sex,1,1))) %>%
@@ -9,26 +21,31 @@ GermanCredit <- GermanCredit %>%
                                                            "... >= 7 years") ~ "Long",
                             TRUE ~ "Short")) %>%
   mutate(employment = factor(employment)) %>%
-  select(sex, employment, credit_risk)
+  select(sex, employment, credit_risk) %>%
+  mutate(credit_risk = fct_relevel(credit_risk, "bad"))
 
 # EDA: Barplots
-gf_bar( ~ sex, fill = ~ credit_risk, 
-        position = position_fill(), data = GermanCredit) %>%
+gp1 <- gf_bar( ~ sex, fill = ~ credit_risk, 
+               position = position_fill(), data = GermanCredit) %>%
   gf_labs(title = "Distribution of credit risk by sex",
           y = "Proportion",
           subtitle ="Higher proportion of bad risk for females")
 
-gf_bar( ~ employment, fill = ~ credit_risk, 
-        position = position_fill(), data = GermanCredit) %>%
+gp2 <- gf_bar( ~ employment, fill = ~ credit_risk, 
+               position = position_fill(), data = GermanCredit) %>%
   gf_labs(title = "Distribution of credit risk by employment",
           y = "Proportion",
           subtitle ="Higher proportion of bad risk for short employment")
 
-gf_bar( ~ sex, fill = ~ employment, 
-        position = position_fill(), data = GermanCredit) %>%
+gp3 <- gf_bar( ~ sex, fill = ~ employment, 
+               position = position_fill(), data = GermanCredit) %>%
   gf_labs(title = "Distribution of employment by sex",
           y = "Proportion",
           subtitle ="Higher proportion of  short employment for femals")
+
+gp1
+gp2
+gp3
 
 # Modeling
 # Protected attribute: sex, i.e. our model should be fair with respect to sex
@@ -59,13 +76,49 @@ mean(fit_full ~ sex, data = GermanCredit)
 mean(fit_unaware ~ sex, data = GermanCredit)
 mean(fit_fair ~ sex, data = GermanCredit)
 
+mean(fit_fair ~ employment, data = GermanCredit)
+
 # Summary: what changed (?)
 library(tidyr)
 
 CreditScoring <- GermanCredit %>%
   select(-credit_risk, -employment_r) %>%
-  unique() %>%
   arrange(sex, employment) %>%
-  pivot_longer(cols =starts_with("fit"))
+  pivot_longer(cols =starts_with("fit"), names_to = "modeling", values_to = "score") %>%
+  mutate(modeling = fct_relevel(modeling, "fit_full", "fit_unaware", "fit_fair"))
 
-#gf_point(value ~ name | employment, color = ~ sex , data = CreditScoring)
+CreditScoring %>%
+  filter(modeling == "fit_full") %>%
+  gf_col(score ~ sex, data = .,
+         position = position_dodge(),
+         stat = "summary", fun.y = "mean") %>%
+  gf_labs(title = "Scoring of full model",
+          subtitle = "Including sex and employment",
+          y = "Average Score")
+
+CreditScoring %>%
+  filter(modeling == "fit_unaware") %>%
+  gf_col(score ~ sex, data = .,
+         position = position_dodge(),
+         stat = "summary", fun.y = "mean") %>%
+  gf_labs(title = "Scoring of unaware model",
+          subtitle = "Including only employment (not sex)",
+          y = "Average Score")
+
+CreditScoring %>%
+  filter(modeling == "fit_fair") %>%
+  gf_col(score ~ sex, data = .,
+         position = position_dodge(),
+         stat = "summary", fun.y = "mean") %>%
+  gf_labs(title = "Scoring of fair model",
+          subtitle = "Including only residuals of employment",
+          y = "Average Score")
+
+CreditScoring %>%
+  filter(modeling == "fit_fair") %>%
+  gf_col(score ~ employment, data = .,
+         position = position_dodge(),
+         stat = "summary", fun.y = "mean") %>%
+  gf_labs(title = "Scoring of fair model",
+          subtitle = "Including only residuals of employment",
+          y = "Average Score")
