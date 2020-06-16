@@ -9,6 +9,16 @@ GermanCredit <- GermanCredit %>%
   mutate(employment = factor(employment)) %>%
   select(sex, employment, credit_risk)
 
+# Higher proportion of bad risk for females
+gf_bar( ~ sex, fill = ~ credit_risk, 
+        position = position_fill(), data = GermanCredit)
+# Higher proportion of bad risk for short employment
+gf_bar( ~ employment, fill = ~ credit_risk, 
+        position = position_fill(), data = GermanCredit)
+# Higher proportion of short employment for femals
+gf_bar( ~ sex, fill = ~ employment, 
+        position = position_fill(), data = GermanCredit)
+
 scoring_full <- glm(credit_risk ~ sex + employment, family = binomial(), data = GermanCredit)
 scoring_unaware <- glm(credit_risk ~ employment, family = binomial(), data = GermanCredit)
 
@@ -22,4 +32,9 @@ GermanCredit <- GermanCredit %>%
   mutate(fit_full = fitted(scoring_full),
          fit_unaware = fitted(scoring_unaware),
          fit_fair = fitted(scoring_fair))
+
+mean(fit_full ~ sex, data = GermanCredit)
+mean(fit_unaware ~ sex, data = GermanCredit)
+mean(fit_fair ~ sex, data = GermanCredit)
+
  
