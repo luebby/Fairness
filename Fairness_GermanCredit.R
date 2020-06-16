@@ -24,7 +24,7 @@ scoring_unaware <- glm(credit_risk ~ employment, family = binomial(), data = Ger
 
 scoring_employment <- glm(employment ~ sex, family = binomial(), data = GermanCredit)
 GermanCredit <- GermanCredit %>%
-  mutate(employment_r = residuals(scoring_employment))
+  mutate(employment_r = (scoring_employment$y - fitted(scoring_employment)))
 scoring_fair <- glm(credit_risk ~ employment_r, family = binomial(), data = GermanCredit)
 
 
