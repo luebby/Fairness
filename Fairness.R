@@ -62,7 +62,7 @@ FairnessData <- FairnessData %>%
 model.fair <- lm(Y ~ X.R, data = FairnessData)
 
 
-# Comparison of prediction
+# Comparison of prediction (here: fitted values, i.e. in sample)
 FairnessData <- FairnessData %>%
   mutate(fitted.full = fitted(model.full)) %>%
   mutate(fitted.excluded = fitted(model.excluded)) %>%
@@ -115,10 +115,11 @@ U0.X <- rep(rnorm(5, sd = 0.1), each = 2)
 X0 <- A0 + U0 + U0.X
 TestFair <- data.frame(ID = rep(1:5, each = 2), A = A0, X = X0)
 
-# Estimate residuals for test data
-model.residual0 <- lm(X ~ A, data = TestFair)
+# Estimate residuals for test data - based on training
+# Alernative (?): model.residual0 <- lm(X ~ A, data = TestFair)
+X.R0 <- TestFair$X - predict(model.residual, newdata = TestFair)
 TestFair <- TestFair %>%
-  mutate(X.R = residuals(model.residual0))
+  mutate(X.R = X.R0)
 
 # Apply model
 TestFair <- TestFair %>%
