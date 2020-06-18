@@ -1,5 +1,6 @@
 # Data
 data("GermanCredit", package = "klaR")
+# But: http://www1.beuth-hochschule.de/FB_II/reports/Report-2019-004.pdf
 
 # DAG
 library(ggdag)
@@ -117,6 +118,16 @@ CreditScoring %>%
           subtitle = "Including only residuals of employment",
           y = "Average Score") + theme_light()
 
+# But: 
+CreditScoring %>%
+filter(modeling == "fit_fair") %>%
+  gf_col(score ~ gender | employment, data = .,
+         position = position_dodge(),
+         stat = "summary", fun.y = "mean") %>%
+  gf_labs(title = "Scoring of fair model",
+          subtitle = "Including only residuals of employment",
+          y = "Average Score") + theme_light()
+
 CreditScoring %>%
   filter(modeling == "fit_fair") %>%
   gf_col(score ~ employment, data = .,
@@ -125,6 +136,8 @@ CreditScoring %>%
   gf_labs(title = "Scoring of fair model",
           subtitle = "Including only residuals of employment",
           y = "Average Score") + theme_light()
+
+
 
 CreditScoring %>%
   unique() %>%
