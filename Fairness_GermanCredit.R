@@ -1,6 +1,5 @@
 # Data
-data("GermanCredit", package = "klaR")
-# But: http://www1.beuth-hochschule.de/FB_II/reports/Report-2019-004.pdf
+# See http://www1.beuth-hochschule.de/FB_II/reports/Report-2019-004.pdf
 
 # DAG
 library(ggdag)
@@ -19,10 +18,10 @@ dagify(X ~ A,
 library(mosaic)
 library(forcats)
 # Data preprocessing
-GermanCredit <- GermanCredit %>%
+GermanCredit <- dat %>%
   mutate(gender = factor(substr(personal_status_sex,1,1))) %>%
-  mutate(employment = case_when(employment_duration %in% c("4 <= ... < 7 years", 
-                                                           "... >= 7 years") ~ "long",
+  mutate(employment = case_when(employment_duration %in% c("4 <= ... < 7 yrs", 
+                                                           ">= 7 yrs") ~ "long",
                             TRUE ~ "short")) %>%
   mutate(employment = factor(employment)) %>%
   select(gender, employment, credit_risk) %>%
@@ -47,7 +46,7 @@ gf_bar( ~ gender, fill = ~ employment,
                position = position_fill(), data = GermanCredit) %>%
   gf_labs(title = "Distribution of employment by gender",
           y = "Proportion",
-          subtitle ="Higher proportion of  short employment for femals") + theme_light()
+          subtitle ="Higher proportion of  short employment for females") + theme_light()
 
 
 # Modeling
